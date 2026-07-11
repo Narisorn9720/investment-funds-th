@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retirement Fund Portfolio Dashboard</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.15);
+            --accent-cyan: #06b6d4;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+            --text-main: #f8fafc;
+            --text-secondary: #94a3b8;
+            --font-display: 'Outfit', sans-serif;
+            --font-body: 'Inter', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.05) 0%, transparent 40%);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            min-height: 100vh;
+            padding: 2rem;
+            overflow-x: hidden;
+        }
+
+        /* Container Layout */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        /* Glassmorphism Card Style */
+        .glass-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .glass-card:hover {
+            border-color: rgba(99, 102, 241, 0.25);
+            box-shadow: 0 12px 40px 0 rgba(99, 102, 241, 0.1);
+        }
+
+        /* Header Area */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-family: var(--font-display);
+            font-size: 2.2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        h1 i {
+            color: var(--primary);
+            filter: drop-shadow(0 0 8px var(--primary));
+        }
+
+        .header-meta {
+            text-align: right;
+        }
+
+        .header-meta p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Top Summary Cards Grid */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .summary-card {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .summary-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--primary);
+        }
+
+        .summary-card.cyan::before { background: var(--accent-cyan); }
+        .summary-card.green::before { background: var(--accent-green); }
+        .summary-card.orange::before { background: var(--accent-orange); }
+
+        .summary-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--primary);
+        }
+
+        .summary-card.cyan .summary-icon { color: var(--accent-cyan); }
+        .summary-card.green .summary-icon { color: var(--accent-green); }
+        .summary-card.orange .summary-icon { color: var(--accent-orange); }
+
+        .summary-info h3 {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
+
+        .summary-info p {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        /* Editable Input styling for Portfolio Amount */
+        .amount-input-container {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .amount-input {
+            background: transparent;
+            border: none;
+            border-bottom: 2px dashed rgba(255, 255, 255, 0.2);
+            color: #fff;
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-weight: 600;
+            width: 100%;
+            outline: none;
+            padding-bottom: 2px;
+            transition: border-color 0.3s;
+        }
+
+        .amount-input:focus {
+            border-color: var(--primary);
+            border-bottom-style: solid;
+        }
+
+        /* Chrome, Safari, Edge, Opera */
+        .amount-input::-webkit-outer-spin-button,
+        .amount-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        /* Firefox */
+        .amount-input[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        .currency-symbol {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        /* Visual Dashboard Layout (Split) */
+        .dashboard-body {
+            display: grid;
+            grid-template-columns: 420px 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard-body {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Sidebar: Allocation & Strategy Controls */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .strategy-selector {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .strategy-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 1rem;
+            color: var(--text-secondary);
+            font-family: var(--font-display);
+            font-weight: 500;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .strategy-btn:hover, .strategy-btn.active {
+            background: var(--primary-glow);
+            border-color: var(--primary);
+            color: #fff;
+        }
+
+        .strategy-btn.active i {
+            color: var(--accent-cyan);
+        }
+
+        .chart-container {
+            position: relative;
+            margin: auto;
+            height: 220px;
+            width: 100%;
+        }
+
+        /* Custom Legend styles to show % and calculated amount */
+        .chart-legend {
+            display: flex;
+            flex-direction: column;
+            gap: 0.65rem;
+            width: 100%;
+            margin-top: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            padding-top: 1.25rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .legend-label-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            width: 72%;
+        }
+
+        .legend-color-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+
+        .legend-value {
+            font-family: var(--font-display);
+            font-weight: 600;
+            color: #fff;
+            font-size: 0.9rem;
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .legend-calc-amount {
+            display: block;
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            font-weight: normal;
+        }
+
+        /* Main Content: Fund Directory */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .filter-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            position: relative;
+            flex-grow: 1;
+            max-width: 400px;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+
+        .search-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            color: #fff;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary);
+        }
+
+        .filter-tags {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-tag {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 0.4rem 1rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-secondary);
+        }
+
+        .filter-tag:hover, .filter-tag.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+
+        /* Fund Cards Grid */
+        .fund-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .fund-card {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .fund-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .fund-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+
+        .fund-ticker {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: #fff;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.25rem 0.6rem;
+            border-radius: 20px;
+        }
+
+        .badge-buy { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge-hold { background: rgba(245, 158, 11, 0.15); color: var(--accent-orange); border: 1px solid rgba(245, 158, 11, 0.3); }
+        .badge-wait { background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan); border: 1px solid rgba(6, 182, 212, 0.3); }
+        .badge-sell { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); border: 1px solid rgba(239, 68, 68, 0.3); }
+
+        .fund-name {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            line-height: 1.4;
+            height: 2.8rem;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .fund-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 0.75rem;
+        }
+
+        .fund-meta {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .fund-meta span {
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .stars-container {
+            color: #fbbf24;
+            font-size: 0.8rem;
+            display: flex;
+            gap: 2px;
+        }
+
+        /* Modal Side Drawer style */
+        .drawer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .drawer-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .drawer {
+            position: fixed;
+            top: 0;
+            right: -550px;
+            width: 100%;
+            max-width: 550px;
+            height: 100vh;
+            background: #1e293b;
+            border-left: 1px solid var(--card-border);
+            box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+            z-index: 1001;
+            padding: 2.5rem 2rem;
+            overflow-y: auto;
+            transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @media (max-width: 600px) {
+            .drawer {
+                max-width: 100%;
+                right: -100%;
+            }
+        }
+
+        .drawer.active {
+            right: 0;
+        }
+
+        .drawer-close {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .drawer-close:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .drawer-header {
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 1.5rem;
+        }
+
+        .drawer-title {
+            font-family: var(--font-display);
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .drawer-subtitle {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        .drawer-section {
+            margin-bottom: 2rem;
+        }
+
+        .drawer-section-title {
+            font-family: var(--font-display);
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--accent-cyan);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .holdings-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .holding-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.6rem 0.8rem;
+            background: rgba(255,255,255,0.02);
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.04);
+            font-size: 0.9rem;
+        }
+
+        .pros-cons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        @media (max-width: 480px) {
+            .pros-cons {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .pc-box {
+            padding: 1rem;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        .pc-box.pros {
+            background: rgba(16, 185, 129, 0.06);
+            border: 1px solid rgba(16, 185, 129, 0.15);
+            color: #a7f3d0;
+        }
+
+        .pc-box.cons {
+            background: rgba(239, 68, 68, 0.06);
+            border: 1px solid rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+        }
+
+        .pc-box-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .drawer-close:hover {
+            color: #fff;
+        }
+
+        .drawer-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .detail-item {
+            background: rgba(0,0,0,0.15);
+            padding: 0.8rem 1rem;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.02);
+        }
+
+        .detail-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+            text-transform: uppercase;
+        }
+
+        .detail-val {
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: 1.05rem;
+        }
+
+        .btn-report {
+            display: block;
+            width: 100%;
+            text-align: center;
+            background: var(--primary);
+            border: none;
+            color: #fff;
+            padding: 0.9rem;
+            border-radius: 10px;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 2rem;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-report:hover {
+            background: #4f46e5;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div>
+                <h1><i class="fa-solid fa-chart-line"></i> แผงควบคุมพอร์ตลงทุนเกษียณอายุ</h1>
+            </div>
+            <div class="header-meta">
+                <p>เป้าหมาย: เกษียณอายุใน 10 ปี (วัยปัจจุบัน 50 ปี)</p>
+                <p>ปรับปรุงล่าสุด: กรกฎาคม 2569</p>
+            </div>
+        </header>
+
+        <!-- Summary Grid -->
+        <div class="summary-grid">
+            <div class="glass-card summary-card">
+                <div class="summary-icon"><i class="fa-solid fa-wallet"></i></div>
+                <div class="summary-info">
+                    <h3>มูลค่าพอร์ตลงทุนหลัก (บาท)</h3>
+                    <div class="amount-input-container">
+                        <input type="number" id="portfolioAmount" value="1000000" min="0" step="1000" oninput="updatePortfolioAmount()" class="amount-input">
+                        <span class="currency-symbol">฿</span>
+                    </div>
+                </div>
+            </div>
+            <div class="glass-card summary-card cyan">
+                <div class="summary-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                <div class="summary-info">
+                    <h3>ระดับความเสี่ยงพอร์ต</h3>
+                    <p>ระดับ 5.2 (ปานกลาง-สูง)</p>
+                </div>
+            </div>
+            <div class="glass-card summary-card green">
+                <div class="summary-icon"><i class="fa-solid fa-percent"></i></div>
+                <div class="summary-info">
+                    <h3>ผลตอบแทนเป้าหมายทบต้น</h3>
+                    <p>~7.5% - 9.0% ต่อปี</p>
+                </div>
+            </div>
+            <div class="glass-card summary-card orange">
+                <div class="summary-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+                <div class="summary-info">
+                    <h3>ระยะเวลาสะสม</h3>
+                    <p>10 ปี (ปีเกษียณ 2579)</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Body Layout -->
+        <div class="dashboard-body">
+            <!-- Left Sidebar -->
+            <div class="sidebar">
+                <!-- Strategy Selection -->
+                <div class="glass-card">
+                    <h2 style="font-family: var(--font-display); font-size: 1.2rem; margin-bottom: 1rem;">เลือกแผนยุทธศาสตร์พอร์ต</h2>
+                    <div class="strategy-selector">
+                        <button class="strategy-btn active" onclick="selectStrategy('balanced')">
+                            <span>พอร์ตแนะนำ (สมดุล 10 ปีเกษียณ)</span>
+                            <i class="fa-solid fa-circle-check"></i>
+                        </button>
+                        <button class="strategy-btn" onclick="selectStrategy('aggressive')">
+                            <span>พอร์ตเน้นเติบโต (รับเสี่ยงได้สูง)</span>
+                            <i class="fa-solid fa-circle-check" style="opacity:0;"></i>
+                        </button>
+                        <button class="strategy-btn" onclick="selectStrategy('conservative')">
+                            <span>พอร์ตระมัดระวัง (เน้นรักษาเงินต้น)</span>
+                            <i class="fa-solid fa-circle-check" style="opacity:0;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Asset Allocation Chart -->
+                <div class="glass-card" style="display: flex; flex-direction: column; align-items: center;">
+                    <h2 style="font-family: var(--font-display); font-size: 1.2rem; margin-bottom: 1rem; width: 100%;">สัดส่วนการลงทุน (Asset Allocation)</h2>
+                    <div class="chart-container">
+                        <canvas id="allocationChart"></canvas>
+                    </div>
+                    <!-- Custom Legend displaying Percentages (%) and Calculated Amounts -->
+                    <div id="chartLegend" class="chart-legend"></div>
+                </div>
+            </div>
+
+            <!-- Right Main Area: Fund Directory -->
+            <div class="main-content">
+                <div class="glass-card filter-bar">
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" class="search-input" id="searchInput" placeholder="ค้นหาชื่อ หรือ สัญลักษณ์กองทุน..." oninput="filterFunds()">
+                    </div>
+                    <div class="filter-tags">
+                        <button class="filter-tag active" onclick="filterCategory('ALL')">ทั้งหมด</button>
+                        <button class="filter-tag" onclick="filterCategory('ควรซื้อ')">ควรซื้อ</button>
+                        <button class="filter-tag" onclick="filterCategory('ซื้อได้')">ซื้อได้</button>
+                        <button class="filter-tag" onclick="filterCategory('รอ')">รอ</button>
+                    </div>
+                </div>
+
+                <!-- Fund Cards Container -->
+                <div class="fund-grid" id="fundGrid">
+                    <!-- Cards will be generated here by Javascript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Drawer Overlay -->
+    <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+
+    <!-- Drawer Content -->
+    <div class="drawer" id="detailDrawer">
+        <button class="drawer-close" onclick="closeDrawer()"><i class="fa-solid fa-xmark"></i></button>
+        <div class="drawer-header">
+            <div class="drawer-title" id="drawerTitle">KT-SET50-A</div>
+            <div class="drawer-subtitle" id="drawerSubtitle">กองทุนเปิดกรุงไทย SET50 (ชนิดสะสมมูลค่า)</div>
+        </div>
+
+        <div class="drawer-grid">
+            <div class="detail-item">
+                <div class="detail-label">ระดับความเสี่ยง</div>
+                <div class="detail-val" id="detailRisk">ระดับ 6</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">คำแนะนำการลงทุน</div>
+                <div class="detail-val" id="detailRec">ควรซื้อ</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">ค่าธรรมเนียมจัดการ</div>
+                <div class="detail-val" id="detailFee">0.428%</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">ผลตอบแทน 1 ปี</div>
+                <div class="detail-val" id="detailReturn1Y">+41.78%</div>
+            </div>
+        </div>
+
+        <div class="drawer-section">
+            <div class="drawer-section-title"><i class="fa-solid fa-list-check"></i> นโยบายการลงทุน</div>
+            <p id="detailPolicy" style="font-size: 0.9rem; line-height: 1.6; color: var(--text-secondary);"></p>
+        </div>
+
+        <div class="drawer-section">
+            <div class="drawer-section-title"><i class="fa-solid fa-scale-balanced"></i> จุดเด่น & ข้อควรระวัง</div>
+            <div class="pros-cons">
+                <div class="pc-box pros">
+                    <div class="pc-box-title"><i class="fa-regular fa-circle-check"></i> จุดเด่น</div>
+                    <div id="detailPros"></div>
+                </div>
+                <div class="pc-box cons">
+                    <div class="pc-box-title"><i class="fa-regular fa-circle-xmark"></i> ข้อควรระวัง</div>
+                    <div id="detailCons"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="drawer-section">
+            <div class="drawer-section-title"><i class="fa-solid fa-pie-chart"></i> สินทรัพย์สูงสุด 5 อันดับแรก</div>
+            <div class="holdings-list" id="detailHoldings">
+                <!-- Holdings generated by JS -->
+            </div>
+        </div>
+
+        <div class="drawer-section">
+            <div class="drawer-section-title"><i class="fa-solid fa-user-tie"></i> คำแนะนำผู้เชี่ยวชาญ (DCA / ถือต่อ?)</div>
+            <p id="detailAdvice" style="font-size: 0.9rem; line-height: 1.6; color: var(--text-secondary); background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04);"></p>
+        </div>
+
+        <a href="" id="detailReportLink" class="btn-report" target="_blank"><i class="fa-solid fa-file-invoice-dollar"></i> อ่านรายงานฉบับวิเคราะห์เต็ม</a>
+    </div>
+
+    <script>
+        // Database values of the 13 funds extracted from their analysis markdown files.
+        const fundsData = [
+            {
+                ticker: "BCAP-USND100",
+                name: "กองทุนเปิดบีแคป หุ้นยูเอส เอ็นดี 100",
+                asset: "หุ้นสหรัฐฯ (Nasdaq-100)",
+                risk: "ระดับ 6 (เสี่ยงสูง)",
+                fee: "0.321% ต่อปี (TER ~0.452%)",
+                returns: { y1: "+37.83%", y3: "+24.36% ต่อปี", y5: "+14.11% ต่อปี" },
+                stars: 5,
+                recommendation: "ควรซื้อ",
+                link: "file:///d:/Projects/Investing/BCAP-USND100/BCAP-USND100_Analysis_Report.md",
+                policy: "ลงทุนในดัชนี Nasdaq-100 ผ่านกองทุนหลักต่างประเทศ Invesco NASDAQ 100 ETF (QQQM) โดยเน้นบริหารจัดการแบบ Passive เพื่อให้ผลตอบแทนสอดคล้องกับดัชนีอ้างอิง",
+                holdings: [
+                    { name: "NVIDIA Corp (NVDA)", weight: "7.73%" },
+                    { name: "Apple Inc (AAPL)", weight: "7.32%" },
+                    { name: "Micron Technology (MU)", weight: "4.86%" },
+                    { name: "Microsoft Corp (MSFT)", weight: "4.50%" },
+                    { name: "Amazon.com Inc (AMZN)", weight: "4.19%" }
+                ],
+                pros: "ลงทุนในกลุ่มบริษัทนวัตกรรมที่มีแบรนด์แข็งแกร่งระดับโลก, ค่าใช้จ่ายต่ำมาก, กองทุนหลัก QQQM ปรับปรุงสเปรดสภาพคล่องสูง",
+                cons: "กระจุกตัวอุตสาหกรรม Big Tech, อัตราแลกเปลี่ยนมีดุลยพินิจเปิดรับความผันผวนของค่าเงินดอลลาร์, ค่าผันผวนระยะสั้นสูง",
+                advice: "เหมาะทำ DCA สัดส่วนประมาณ 10-15% เพื่อเป็น Growth Engine ในช่วงวัยเกษียณ 10 ปีที่ยังสะสมสินทรัพย์"
+            },
+            {
+                ticker: "K-JPX-A(A)",
+                name: "กองทุนเปิดเค ดัชนีหุ้นญี่ปุ่น-A ชนิดสะสมมูลค่า",
+                asset: "หุ้นญี่ปุ่น (TOPIX)",
+                risk: "ระดับ 6 (เสี่ยงสูง)",
+                fee: "0.313% ต่อปี (TER ~1.872%)",
+                returns: { y1: "+39.36%", y3: "+21.68% ต่อปี", y5: "+16.52% ต่อปี" },
+                stars: 5,
+                recommendation: "ควรซื้อ",
+                link: "file:///d:/Projects/Investing/K-JPX-A-A/K-JPX-A-A_Analysis.md",
+                policy: "ลงทุนเชิงรับในดัชนี TOPIX ผ่านกองทุนหลัก NEXT FUNDS TOPIX ETF (1306) เพื่อสร้างผลตอบแทนสอดคล้องกับตลาดหุ้นญี่ปุ่นทั้งหมด",
+                holdings: [
+                    { name: "Mitsubishi UFJ Financial", weight: "3.60%" },
+                    { name: "Tokyo Electron Ltd", weight: "2.80%" },
+                    { name: "Toyota Motor Corp", weight: "2.61%" },
+                    { name: "Sumitomo Mitsui Financial", weight: "2.46%" },
+                    { name: "SoftBank Group", weight: "2.42%" }
+                ],
+                pros: "Morningstar 5 ดาวสะท้อนความสม่ำเสมอดีเยี่ยม, ไม่มีค่าธรรมเนียมธุรกรรมแรกเข้า/ออก, ป้องกัน FX อย่างมั่นคงไม่น้อยกว่า 75%",
+                cons: "ทิศทางการปรับตัวขึ้นดอกเบี้ยของธนาคารกลางญี่ปุ่น (BOJ), ค่าใช้จ่ายโครงการสะสมสูงกว่ากองทุนเชิงรับทั่วไปเล็กน้อย",
+                advice: "แนะนำจัดสรร 10-15% ทำ DCA กระจายสินทรัพย์จากตลาดพัฒนาแล้วนอกเหนือดอลลาร์เพื่อสร้างความเสถียรในระยะยาว 10 ปี"
+            },
+            {
+                ticker: "KT-SET50-A",
+                name: "กองทุนเปิดกรุงไทย SET50 (ชนิดสะสมมูลค่า)",
+                asset: "หุ้นไทยขนาดใหญ่ (SET50)",
+                risk: "ระดับ 6 (เสี่ยงสูง)",
+                fee: "0.428% ต่อปี (TER ~0.493%)",
+                returns: { y1: "+41.78%", y3: "+6.87% ต่อปี", y5: "+4.45% ต่อปี" },
+                stars: 4,
+                recommendation: "ควรซื้อ",
+                link: "file:///d:/Projects/Investing/KT-SET50-A/KT-SET50-A_Analysis.md",
+                policy: "มุ่งเน้นสร้างผลตอบแทนให้ใกล้เคียงกับดัชนีผลตอบแทนรวม SET50 (SET50 TRI) โดยมีนโยบายลงทุนเชิงรับ (Passive Management)",
+                holdings: [
+                    { name: "DELTA Electronics", weight: "12.10%" },
+                    { name: "ADVANC AIS", weight: "8.40%" },
+                    { name: "PTT Public Co", weight: "8.29%" },
+                    { name: "GULF Energy", weight: "7.41%" },
+                    { name: "AOT Airports", weight: "6.32%" }
+                ],
+                pros: "ค่าธรรมเนียมการบริหารต่ำมาก, Tracking Error น้อยมากเพียง 0.21%, ชนิดสะสมทบต้นไม่ถูกคิดภาษีปันผลหัก ณ ที่จ่าย 10%",
+                cons: "ผูกติดสภาวะเศรษฐกิจในไทยที่การเติบโตเริ่มชะลอลงตามโครงสร้างสังคมสูงวัย, ผลตอบแทนแพ้ดัชนีชี้วัดเล็กน้อยเนื่องจากมีค่าใช้จ่ายกองทุน",
+                advice: "ควรใช้เป็นแกนหลักหุ้นไทย (Core Thai Portfolio) 15-25% ของพอร์ตรวมและใช้ระบบ DCA รายเดือน"
+            },
+            {
+                ticker: "KKP S-PLUS",
+                name: "กองทุนเปิดเคเคพี สมาร์ท พลัส",
+                asset: "ตราสารหนี้ระยะสั้นไทย",
+                risk: "ระดับ 4 (เสี่ยงปานกลางค่อนต่ำ)",
+                fee: "0.29% ต่อปี",
+                returns: { y1: "+1.78% ถึง +2.01%", y3: "+2.37% ต่อปี", y5: "N/A" },
+                stars: 4,
+                recommendation: "ควรซื้อ",
+                link: "file:///d:/Projects/Investing/KKP_S_PLUS/kkp_s_plus_analysis.md",
+                policy: "ลงทุนเชิงรุกในพันธบัตรรัฐบาลและหุ้นกู้ภาคเอกชนคุณภาพสูง (Investment Grade) ที่มีอายุตราสารเฉลี่ยสั้นไม่เกิน 1 ปี",
+                holdings: [
+                    { name: "พันธบัตรรัฐบาล / ธปท.", weight: "57.00%" },
+                    { name: "หุ้นกู้เอกชน (Corporate)", weight: "35.00%" },
+                    { name: "เงินฝาก / ตั๋วสัญญาใช้เงิน", weight: "4.00%" },
+                    { name: "สินทรัพย์อื่น ๆ", weight: "4.00%" }
+                ],
+                pros: "ความผันผวนต่ำมาก รักษาความปลอดภัยของเงินต้นได้ยอดเยี่ยม, สภาพคล่องสูงขายได้ทุกวันทำการ, ค่าธรรมเนียมเก็บจริงถูกมาก",
+                cons: "ผลตอบแทนอยู่ในเกณฑ์ต่ำ (~2.0%) ไม่สามารถชนะเงินเฟ้อสำหรับการสะสมระยะยาว, ไม่มีปันผลสม่ำเสมอระหว่างทาง",
+                advice: "ควรจัดสรร 15-20% ของพอร์ตรวมเป็นสินทรัพย์เสถียรเพื่อพยุงความผันผวนและเงินสำรองสภาพคล่องเผื่อฉุกเฉินก่อนเกษียณ"
+            },
+            {
+                ticker: "ES-US500",
+                name: "กองทุนเปิดอีสท์สปริง US500 Equity Index",
+                asset: "หุ้นสหรัฐฯ (S&P 500)",
+                risk: "ระดับ 6 (เสี่ยงสูง)",
+                fee: "1.07% ต่อปี",
+                returns: { y1: "~17.18%", y3: "N/A", y5: "N/A" },
+                stars: 4,
+                recommendation: "ซื้อได้",
+                link: "file:///d:/Projects/Investing/ES-US500/ES-US500_Analysis.md",
+                policy: "ลงทุนในดัชนี S&P 500 ผ่าน iShares Core S&P 500 ETF (IVV) เพื่อล้อผลการดำเนินงานของ 500 บริษัทที่ใหญ่ที่สุดในตลาดหุ้นสหรัฐฯ",
+                holdings: [
+                    { name: "NVIDIA Corp (NVDA)", weight: "7.30%" },
+                    { name: "Apple Inc (AAPL)", weight: "7.00%" },
+                    { name: "Microsoft Corp (MSFT)", weight: "4.50%" },
+                    { name: "Amazon.com Inc (AMZN)", weight: "3.70%" },
+                    { name: "Alphabet Class A (GOOGL)", weight: "3.30%" }
+                ],
+                pros: "กระจายน้ำหนักหุ้นขนาดใหญ่ครอบคลุมหลากหลายเซกเตอร์ of สหรัฐฯ, จัดอันดับ Morningstar 4 ดาว, ขั้นต่ำลงทุนเพียง 1 บาท",
+                cons: "ค่าจัดการกองทุนและค่าแรกเข้าสะสมค่อนข้างแพง, ป้องกันความเสี่ยง FX ตามดุลยพินิจของผู้จัดการกองทุน",
+                advice: "ถือเป็นหุ้นแกนหลักต่างประเทศ (Core) 15-20% ได้ดี แต่ควรเปรียบเทียบค่าธรรมเนียมกับค่ายอื่นเพื่อเพิ่มความประหยัดเงินทบต้น 10 ปี"
+            },
+            {
+                ticker: "K-SEMQ",
+                name: "กองทุนเปิดเค ซีเล็คทีฟ อีเมอร์จิ้ง มาร์เก็ตส์ หุ้นทุน",
+                asset: "หุ้นตลาดเกิดใหม่ (Active EM)",
+                risk: "ระดับ 6 (เสี่ยงสูง)",
+                fee: "1.28% - 1.60% ต่อปี",
+                returns: { y1: "+66.53%", y3: "+25.50% ต่อปี", y5: "N/A" },
+                stars: 4,
+                recommendation: "ซื้อได้",
+                link: "file:///d:/Projects/Investing/K-SEMQ/K-SEMQ_Analysis.md",
+                policy: "ลงทุนเชิงรุก (Active) ในหุ้นเติบโตตลาดเกิดใหม่ผ่าน Templeton Emerging Markets Fund โดยเน้นบริษัทผู้นำนวัตกรรมระดับโลก",
+                holdings: [
+                    { name: "SK Hynix (South Korea)", weight: "10.84%" },
+                    { name: "Samsung Electronics", weight: "9.73%" },
+                    { name: "TSMC Semiconductor", weight: "9.58%" },
+                    { name: "ICICI Bank (India)", weight: "4.59%" },
+                    { name: "MediaTek Inc (Taiwan)", weight: "4.25%" }
+                ],
+                pros: "ได้ประโยชน์เต็มที่จากวัฏจักร AI และ Semiconductor ผ่านผู้นำโลก 3 ตัวหลัก, ผลงานย้อนหลัง 1 ปีเติบโตก้าวกระโดดบวกกว่า 60%",
+                cons: "กระจุกตัวในผู้ผลิตชิปยักษ์ใหญ่รวม 30%, มีค่าธรรมเนียมขาเข้า (Front-end) 1.50%, ความเสี่ยงการเมืองไต้หวัน-จีน",
+                advice: "สามารถซื้อและทำ DCA ได้แต่จำกัดสัดส่วนพอร์ตเสริม (Satellite) ที่ 5-10% เพื่อควบคุมความเสี่ยงเชิงอุตสาหกรรมชิป"
+            },
+            {
+                ticker: "SCBGOLD",
+                name: "กองทุนเปิดไทยพาณิชย์โกลด์ (ชนิดสะสมมูลค่า)",
+                asset: "สินทรัพย์ทางเลือก (ทองคำ)",
+                risk: "ระดับ 8 (เสี่ยงสูงมาก)",
+                fee: "0.535% ต่อปี",
+                returns: { y1: "N/A", y3: "N/A", y5: "N/A" },
+                stars: 3,
+                recommendation: "ซื้อได้",
+                link: "file:///d:/Projects/Investing/SCBGOLD/SCBGOLD_Analysis.md",
+                policy: "สร้างผลตอบแทนตามราคาทองคำแท่งในตลาดโลก ผ่านการลงทุนหน่วยลงทุนของ SPDR Gold Trust โดยไม่มีการป้องกันความเสี่ยงอัตราแลกเปลี่ยน",
+                holdings: [
+                    { name: "SPDR Gold Shares (GLD SP)", weight: "98.96%" },
+                    { name: "เงินสดและสินทรัพย์อื่นๆ", weight: "1.04%" }
+                ],
+                pros: "ทำหน้าที่เป็นสินทรัพย์หลบภัย (Safe Haven) ป้องกันภาวะเงินเฟ้อสูง, เคลื่อนไหวไม่ผูกกับหุ้น/ตราสารหนี้, สะสมขั้นต่ำ 1 บาท",
+                cons: "ไม่ป้องกันความเสี่ยง FX ค่าเงินบาทแข็งจะทำให้ผลตอบแทนเป็นบาทติดลบ, สินทรัพย์ทองคำไม่จ่ายกระแสเงินสดปันผล/ดอกเบี้ย",
+                advice: "แนะนำสะสม 5% เพื่อช่วยพยุงลดความเสี่ยงของพอร์ต หากห่วงบาทแข็งค่า แนะนำศึกษาเปรียบเทียบกับรุ่นป้องกันความเสี่ยง FX (SCBGOLDH)"
+            },
+            {
+                ticker: "LHVN-A",
+                name: "กองทุนเปิด แอล เอช เวียดนาม ชนิดสะสมมูลค่า",
+                asset: "หุ้นเวียดนาม (Fund of Funds)",
+                risk: "ระดับ 6 (เสี่ยงสูง)",
+                fee: "1.605% ต่อปี",
+                returns: { y1: "N/A", y3: "N/A", y5: "N/A" },
+                stars: 3,
+                recommendation: "ซื้อได้",
+                link: "file:///d:/Projects/Investing/LHVN-A/LHVN-A_Analysis.md",
+                policy: "ลงทุนหุ้นเวียดนามเติบโตผ่านการคัดสรรผู้จัดการกองทุนชั้นนำหลายราย (Multi-Manager) ทั้งสไตล์เชิงรุกและกองทุนดัชนีเชิงรับ",
+                holdings: [
+                    { name: "Forum One - VinaCapital Class H", weight: "23.69%" },
+                    { name: "Lumen Vietnam Fund Class I", weight: "21.18%" },
+                    { name: "Vietnam Equity UCITS Fund", weight: "21.05%" },
+                    { name: "VFMVN30 ETF", weight: "8.14%" },
+                    { name: "SSIAM VNFIN LEAD ETF", weight: "5.75%" }
+                ],
+                pros: "การกระจายพอร์ตแบบผสมลดข้อผิดพลาดผู้บริหารเดี่ยว, พื้นฐานเศรษฐกิจประเทศเวียดนามเติบโตเด่นจากกระแสการลงทุน FDI",
+                cons: "จัดอยู่ในตลาด Frontier Market สภาพคล่องหรือกฎระเบียบปรับตัวง่าย, อัตราแลกเปลี่ยนมีดุลยพินิจ, คิดค่าธรรมเนียมซื้อขาย 1.50%",
+                advice: "เหมาะสำหรับพอร์ตเสริมสะสมความมั่งคั่งระยะเวลา 10 ปี แนะนำจำกัดสัดส่วนไว้ต่ำเพียง 5% ของพอร์ตรวม"
+            },
+            {
+                ticker: "B-CNNEXT",
+                name: "กองทุนเปิดบัวหลวง China Next Economy",
+                asset: "หุ้นจีนแผ่นดินใหญ่ A-Shares",
+                risk: "ระดับ 6 (เสี่ยงสูง)",
+                fee: "ไม่ระบุในรายงาน",
+                returns: { y1: "N/A (YTD ~+42% ถึง +65%)", y3: "N/A", y5: "N/A" },
+                stars: 3,
+                recommendation: "รอ",
+                link: "file:///d:/Projects/Investing/B-CNNEXT/B-CNNEXT_Analysis.md",
+                policy: "ลงทุนในหุ้นนวัตกรรมจีนแผ่นดินใหญ่ (China A-Shares) ที่ขับเคลื่อนด้วยนวัตกรรมพลังงานสะอาด เซมิคอนดักเตอร์ และอุตสาหกรรมเปลี่ยนผ่านร่วมกับ E Fund Management",
+                holdings: [
+                    { name: "E Fund Env. Protection Strong Stock", weight: "69.42%" },
+                    { name: "E Fund CSI 300 ETF", weight: "14.27%" },
+                    { name: "E Fund Kexiang Mixed Fund", weight: "8.12%" }
+                ],
+                pros: "ได้ประโยชน์การกระตุ้นและการช่วยเหลืออุตสาหกรรม Next Economy ของพรรคคอมมิวนิสต์จีน, ฟื้นตัวอย่างโดดเด่นสะสมช่วงปี 2568-2569",
+                cons: "นวัตกรรมจีนมีความผันผวนสูงเป็นอันดับต้นๆ ของโลก, นโยบายรัฐบาลแทรกแซงได้ง่าย, อัตราป้องกันค่าเงินไม่แน่นอน",
+                advice: "แนะนำให้ชะลอการใส่เงินเพิ่ม หรือจำกัดสัดส่วนพอร์ตเสี่ยงไม่เกิน 3-5% เนื่องจากตลาดหุ้นจีนมีความเสี่ยงเชิงภูมิรัฐศาสตร์สูง"
+            },
+            {
+                ticker: "BCAP-CTECH",
+                name: "กองทุนเปิดบีแคป ไชน่า เทคโนโลยี",
+                asset: "เทคโนโลยีจีน",
+                risk: "ระดับ 6 (เสี่ยงสูง)",
+                fee: "ไม่ระบุในรายงาน",
+                returns: { y1: "-5.40%", y3: "+4.41% ต่อปี", y5: "N/A" },
+                stars: 3,
+                recommendation: "รอ",
+                link: "file:///d:/Projects/Investing/BCAP-CTECH/BCAP-CTECH_Analysis.md",
+                policy: "ลงทุน Fund of Funds อิงเทคโนโลยีจีน 50/50 ผ่าน ETF ฮาร์ดแวร์เซมิคอนดักเตอร์ CQQQ และ ETF อินเทอร์เน็ต KWEB ป้องกัน FX เกิน 80%",
+                holdings: [
+                    { name: "Invesco China Technology (CQQQ)", weight: "50.00%" },
+                    { name: "KraneShares CSI China Internet (KWEB)", weight: "50.00%" }
+                ],
+                pros: "จัดสรรแบ่งพอร์ตจีนแบบ 50/50 ลงตัวทั้งแพลตฟอร์มอินเทอร์เน็ตและชิ้นส่วนอิเล็กทรอนิกส์, ลดความเสี่ยงค่าเงินได้ดี (>80% Hedge)",
+                cons: "ความตึงเครียดด้านชิปสหรัฐฯ-จีน, สัญญาณลบผลตอบแทนสะสมรายปีค่อนข้างติดลบและฟื้นตัวช้าในช่วงที่ผ่านมา",
+                advice: "แนะนำให้รอดูสถานการณ์ทิศทางฟื้นตัว หรือสลับสับเปลี่ยนบางส่วนเพื่อลดความผันผวนไปเข้าสู่เทคโนโลยีฝั่งสหรัฐฯ (USND100)"
+            },
+            {
+                ticker: "BTK",
+                name: "กองทุนเปิดบัวหลวงธนคม",
+                asset: "หุ้นไทยรายกลุ่ม (Bank & ICT)",
+                risk: "ระดับ 6 (เสี่ยงสูง)",
+                fee: "1.605% ต่อปี (TER 1.791%)",
+                returns: { y1: "+40.93%", y3: "N/A", y5: "N/A" },
+                stars: 3,
+                recommendation: "รอ",
+                link: "file:///d:/Projects/Investing/BTK/BTK_Analysis.md",
+                policy: "ลงทุนกระจุกตัวในหุ้นขนาดใหญ่ 3 กลุ่มธุรกิจหลัก (ธนาคาร, สื่อสาร, เงินทุนหลักทรัพย์) ของไทยเฉลี่ยไม่น้อยกว่า 80% ของ NAV",
+                holdings: [
+                    { name: "ADVANC AIS (ICT)", weight: "22.43%" },
+                    { name: "SCB X (BANK)", weight: "12.40%" },
+                    { name: "KBANK (BANK)", weight: "11.36%" },
+                    { name: "TRUE Corporation (ICT)", weight: "9.56%" },
+                    { name: "KTB Krungthai (BANK)", weight: "8.46%" }
+                ],
+                pros: "หุ้นเป้าหมายมั่นคงเป็นโครงสร้างหลักของระบบการเงินไทยและโครงสร้างพื้นฐานดิจิทัล, สะสมทบปันผลทบต้นลดหย่อนภาษีหัก ณ ที่จ่าย",
+                cons: "กระจุกตัว 3 หมวดธุรกิจสูงมากขาดการกระจายความเสี่ยง, ค่าธรรมเนียมการบริหารแพงมากเกินไปสำหรับหุ้นกลุ่มโครงสร้าง",
+                advice: "แนะนำให้เปลี่ยน (Switch) ไปยังกองทุนดัชนี KT-SET50-A เพื่อประหยัดต้นทุนค่าธรรมเนียมลงปีละ 1.2% และกระจายความเสี่ยงดีกว่า"
+            },
+            {
+                ticker: "K-INDX",
+                name: "กองทุนเปิดเค ดัชนีหุ้นอินเดีย",
+                asset: "หุ้นอินเดีย (MSCI India)",
+                risk: "ระดับ 6 (เสี่ยงสูง)",
+                fee: "~0.54% ต่อปี",
+                returns: { y1: "-14.77%", y3: "-0.49% ต่อปี", y5: "-0.42% ต่อปี" },
+                stars: 3,
+                recommendation: "รอ",
+                link: "file:///d:/Projects/Investing/K-INDX/K-INDX_Analysis.md",
+                policy: "ลงทุนเชิงรับอิงดัชนี MSCI India Index ผ่านกองทุนหลัก iShares MSCI India UCITS ETF (NDIA) โดยมีดุลยพินิจเรื่องอัตราแลกเปลี่ยน",
+                holdings: [
+                    { name: "HDFC Bank (Financials)", weight: "7.00%" },
+                    { name: "Reliance Industries (Energy)", weight: "6.07%" },
+                    { name: "ICICI Bank (Financials)", weight: "5.62%" },
+                    { name: "Bharti Airtel (Telecom)", weight: "3.91%" },
+                    { name: "Axis Bank (Financials)", weight: "2.39%" }
+                ],
+                pros: "ค่าใช้จ่ายระดับเป็นมิตรและฟรีค่าแรกเข้าเอื้อต่อการลงทุนยาว, แนวโน้มการเปลี่ยนผ่านการผลิตโลกมายังประเทศอินเดีย",
+                cons: "ผลงานการลงทุนย้อนหลังในระยะ 1, 3, 5 ปียังติดลบสะสม, กระจุกตัวกลุ่มสถาบันการเงินและพลังงาน, ความผันผวนค่าเงินและปัจจัย EM",
+                advice: "แนะนำชะลอสะสม หรือพักเพื่อรอจังหวะตลาดฟื้นตัว หากต้องการสร้างการเติบโตแนะนำย้ายน้ำหนักเข้าหาหุ้นกลุ่มสหรัฐฯ หรือญี่ปุ่น"
+            },
+            {
+                ticker: "BCAP-USL",
+                name: "กองทุนเปิดบีแคป ยูเอสดี ชอร์ทเทอม ลิควิดิตี้",
+                asset: "ตราสารตลาดเงินสหรัฐฯ (USD)",
+                risk: "ระดับ 4 (เสี่ยงปานกลางค่อนต่ำ)",
+                fee: "0.428% ต่อปี",
+                returns: { y1: "N/A", y3: "N/A", y5: "N/A" },
+                stars: 3,
+                recommendation: "รอ",
+                link: "file:///d:/Projects/Investing/BCAP-US/BCAP-USL_Analysis_Report.md",
+                policy: "ลงทุนตลาดเงินและตราสารหนี้ระยะสั้นสกุลดอลลาร์สหรัฐคุณภาพดี ผ่าน Pictet - Short-Term Money Market USD โดยไม่มีการป้องกันความเสี่ยงอัตราแลกเปลี่ยน",
+                holdings: [
+                    { name: "Pictet - Short-Term Money Market USD", weight: "98.04%" },
+                    { name: "เงินสดและอื่นๆ", weight: "1.96%" }
+                ],
+                pros: "ความเสี่ยงการผิดนัดชำระหนี้เกือบศูนย์, ได้รับอัตราดอกเบี้ยจูงใจสอดคล้องกับนโยบายดอกเบี้ยของ Fed",
+                cons: "ไม่ป้องกันความเสี่ยงค่าเงิน (Unhedged 100%) ทำให้มูลค่าผันผวนตามสกุลเงินบาท/ดอลลาร์ และแนวโน้มดอกเบี้ยสหรัฐฯ ขาลง",
+                advice: "แนะนำให้สับเปลี่ยนไปกองทุนรวมตลาดเงินไทย (เช่น KKP S-PLUS) เพื่อกำจัดความเสี่ยงอัตราแลกเปลี่ยนที่ผันผวนในสกุลเงินบาท"
+            }
+        ];
+
+        // Portfolio Allocation Database based on selected strategy
+        const strategies = {
+            balanced: {
+                labels: ['ตราสารหนี้ (KKP S-PLUS)', 'หุ้นไทย (KT-SET50-A)', 'หุ้นหลักต่างประเทศ (USND100, K-JPX, ES-US500)', 'หุ้นเติบโตตลาดเกิดใหม่ (K-SEMQ, LHVN-A)', 'สินทรัพย์ทางเลือกทองคำ (SCBGOLD)'],
+                data: [20, 20, 45, 10, 5],
+                colors: ['#6366f1', '#06b6d4', '#10b981', '#f59e0b', '#ef4444'],
+                riskScore: '5.2 (ปานกลาง-สูง)',
+                returnGoal: '~7.5% - 9.0% ต่อปี'
+            },
+            aggressive: {
+                labels: ['ตราสารหนี้ (KKP S-PLUS)', 'หุ้นไทย (KT-SET50-A)', 'หุ้นหลักต่างประเทศ (USND100, K-JPX, ES-US500)', 'หุ้นเติบโตตลาดเกิดใหม่ (K-SEMQ, LHVN-A)', 'สินทรัพย์ทางเลือกทองคำ (SCBGOLD)'],
+                data: [5, 15, 60, 15, 5],
+                colors: ['#6366f1', '#06b6d4', '#10b981', '#f59e0b', '#ef4444'],
+                riskScore: '6.0 (สูง)',
+                returnGoal: '~10.0% - 12.0% ต่อปี'
+            },
+            conservative: {
+                labels: ['ตราสารหนี้ (KKP S-PLUS)', 'หุ้นไทย (KT-SET50-A)', 'หุ้นหลักต่างประเทศ (USND100, K-JPX, ES-US500)', 'หุ้นเติบโตตลาดเกิดใหม่ (K-SEMQ, LHVN-A)', 'สินทรัพย์ทางเลือกทองคำ (SCBGOLD)'],
+                data: [45, 15, 30, 5, 5],
+                colors: ['#6366f1', '#06b6d4', '#10b981', '#f59e0b', '#ef4444'],
+                riskScore: '4.5 (ปานกลางค่อนต่ำ)',
+                returnGoal: '~4.5% - 5.5% ต่อปี'
+            }
+        };
+
+        let activeCategory = 'ALL';
+        let currentStrategy = 'balanced';
+        let allocationChart = null;
+
+        // Dynamic Calculations based on Portfolio Amount Input
+        function updatePortfolioAmount() {
+            const inputVal = parseFloat(document.getElementById('portfolioAmount').value);
+            const amount = isNaN(inputVal) ? 0 : inputVal;
+            
+            // Recalculate Legend Values
+            updateLegend(amount);
+        }
+
+        // Initialize Chart.js
+        function initChart(strategyKey = 'balanced') {
+            currentStrategy = strategyKey;
+            const ctx = document.getElementById('allocationChart').getContext('2d');
+            const strat = strategies[strategyKey];
+
+            if (allocationChart) {
+                allocationChart.destroy();
+            }
+
+            allocationChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: strat.labels,
+                    datasets: [{
+                        data: strat.data,
+                        backgroundColor: strat.colors,
+                        borderWidth: 1,
+                        borderColor: 'rgba(255, 255, 255, 0.1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` ${context.label}: ${context.raw}%`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+
+            // Trigger dynamic allocation calculation
+            const inputVal = parseFloat(document.getElementById('portfolioAmount').value);
+            const amount = isNaN(inputVal) ? 0 : inputVal;
+            updateLegend(amount);
+
+            // Update Summary Info on UI
+            document.querySelector('.summary-card.cyan .summary-info p').innerText = strat.riskScore;
+            document.querySelector('.summary-card.green .summary-info p').innerText = strat.returnGoal;
+        }
+
+        // Render Custom Legend with % and calculated cash amount
+        function updateLegend(amount) {
+            const strat = strategies[currentStrategy];
+            const legendDiv = document.getElementById('chartLegend');
+            legendDiv.innerHTML = '';
+            
+            strat.labels.forEach((label, index) => {
+                const percentage = strat.data[index];
+                const color = strat.colors[index];
+                const cashValue = (amount * (percentage / 100)).toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+                
+                legendDiv.innerHTML += `
+                    <div class="legend-item">
+                        <div class="legend-label-group">
+                            <span class="legend-color-dot" style="background-color: ${color}"></span>
+                            <span>${label}</span>
+                        </div>
+                        <span class="legend-value">
+                            ${percentage}%
+                            <span class="legend-calc-amount">เงิน ${cashValue} บาท</span>
+                        </span>
+                    </div>
+                `;
+            });
+        }
+
+        // Handle strategy button clicks
+        function selectStrategy(strategyKey) {
+            // Update button styles
+            const buttons = document.querySelectorAll('.strategy-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            const checks = document.querySelectorAll('.strategy-btn i');
+            checks.forEach(i => i.style.opacity = '0');
+
+            let activeIndex = 0;
+            if (strategyKey === 'aggressive') activeIndex = 1;
+            if (strategyKey === 'conservative') activeIndex = 2;
+
+            buttons[activeIndex].classList.add('active');
+            checks[activeIndex].style.opacity = '1';
+
+            initChart(strategyKey);
+        }
+
+        // Render Fund Cards dynamically
+        function renderFunds(data) {
+            const grid = document.getElementById('fundGrid');
+            grid.innerHTML = '';
+
+            data.forEach(fund => {
+                let badgeClass = 'badge-wait';
+                if (fund.recommendation === 'ควรซื้อ') badgeClass = 'badge-buy';
+                else if (fund.recommendation === 'ซื้อได้') badgeClass = 'badge-hold';
+                else if (fund.recommendation === 'ไม่แนะนำ') badgeClass = 'badge-sell';
+
+                let stars = '';
+                for (let i = 0; i < 5; i++) {
+                    if (i < fund.stars) {
+                        stars += '<i class="fa-solid fa-star"></i>';
+                    } else {
+                        stars += '<i class="fa-regular fa-star"></i>';
+                    }
+                }
+
+                const card = document.createElement('div');
+                card.className = 'fund-card';
+                card.onclick = () => openDrawer(fund.ticker);
+                card.innerHTML = `
+                    <div>
+                        <div class="fund-header">
+                            <span class="fund-ticker">${fund.ticker}</span>
+                            <span class="badge ${badgeClass}">${fund.recommendation}</span>
+                        </div>
+                        <div class="fund-name">${fund.name}</div>
+                    </div>
+                    <div class="fund-footer">
+                        <div class="fund-meta">ความเสี่ยง: <span>${fund.risk.split(' ')[0]}</span></div>
+                        <div class="stars-container">${stars}</div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Filter and Search logic
+        function filterFunds() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            let filtered = fundsData;
+
+            if (activeCategory !== 'ALL') {
+                filtered = filtered.filter(f => f.recommendation === activeCategory);
+            }
+
+            if (query) {
+                filtered = filtered.filter(f => 
+                    f.ticker.toLowerCase().includes(query) || 
+                    f.name.toLowerCase().includes(query) ||
+                    f.asset.toLowerCase().includes(query)
+                );
+            }
+
+            renderFunds(filtered);
+        }
+
+        function filterCategory(category) {
+            activeCategory = category;
+            
+            const tags = document.querySelectorAll('.filter-tag');
+            tags.forEach(t => t.classList.remove('active'));
+
+            event.target.classList.add('active');
+            filterFunds();
+        }
+
+        // Side Drawer logic
+        function openDrawer(ticker) {
+            const fund = fundsData.find(f => f.ticker === ticker);
+            if (!fund) return;
+
+            document.getElementById('drawerTitle').innerText = fund.ticker;
+            document.getElementById('drawerSubtitle').innerText = fund.name;
+            document.getElementById('detailRisk').innerText = fund.risk;
+            document.getElementById('detailRec').innerText = fund.recommendation;
+            document.getElementById('detailFee').innerText = fund.fee;
+            document.getElementById('detailReturn1Y').innerText = fund.returns.y1;
+            document.getElementById('detailPolicy').innerText = fund.policy;
+            document.getElementById('detailAdvice').innerText = fund.advice;
+
+            // Render Pros & Cons
+            document.getElementById('detailPros').innerHTML = fund.pros.split(',').map(p => `<p style="margin-bottom: 0.25rem;"><i class="fa-solid fa-check"></i> ${p.trim()}</p>`).join('');
+            document.getElementById('detailCons').innerHTML = fund.cons.split(',').map(c => `<p style="margin-bottom: 0.25rem;"><i class="fa-solid fa-angle-right"></i> ${c.trim()}</p>`).join('');
+
+            // Render Holdings
+            const holdingsContainer = document.getElementById('detailHoldings');
+            holdingsContainer.innerHTML = '';
+            fund.holdings.forEach(h => {
+                holdingsContainer.innerHTML += `
+                    <div class="holding-item">
+                        <span>${h.name}</span>
+                        <span style="font-weight:600; color: var(--accent-cyan);">${h.weight}</span>
+                    </div>
+                `;
+            });
+
+            // Update Full Report Link
+            document.getElementById('detailReportLink').href = fund.link;
+
+            // Show Drawer
+            document.getElementById('drawerOverlay').classList.add('active');
+            document.getElementById('detailDrawer').classList.add('active');
+        }
+
+        function closeDrawer() {
+            document.getElementById('drawerOverlay').classList.remove('active');
+            document.getElementById('detailDrawer').classList.remove('active');
+        }
+
+        // Initialize App
+        window.onload = () => {
+            initChart('balanced');
+            renderFunds(fundsData);
+        };
+    </script>
+</body>
+</html>
